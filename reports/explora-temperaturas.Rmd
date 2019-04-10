@@ -13,7 +13,6 @@ library(lubridate)
 library(ggbeeswarm)
 theme_set(theme_bw())
 ```
-
 ```{r read}
 climas = read_csv(here::here("data/clima_cg_jp-semanal.csv"), 
                   col_types = "cTdddddd")
@@ -25,24 +24,105 @@ glimpse(climas)
 
 ### Onde é mais quente?
 
+Pode observar claramente no gráfico abaixo que a média de temperatura em Campina Grande é menor que a média de temperatura em João Pessoa. É possível concluir que João Pessoa foi mais quente que Campina Grande ao longo dos últimos anos, com médias anuais de temperatura superiores em todos os anos.
+```{r}
+climas %>% 
+    filter(ano >= 2002) %>%
+    group_by(cidade, ano) %>% 
+    summarise(tmedia_anual = (sum(tmedia) / n())) %>% 
+    arrange(ano) %>% 
+    ggplot(aes(x = ano, y = tmedia_anual)) +
+    geom_col(aes(fill = cidade), position = "dodge") +
+    scale_x_continuous(breaks = seq(2002, 2019, 1)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
+    labs(
+        x = "Ano",
+        y = "Média de temperatura",
+        fill = "Cidade"
+    ) +
+    theme(legend.position = "bottom")
+```
 
-### As temperaturas máximas semanais (o pico do calor) são tão diferentes quanto as médias? Mais?  
-
-
-### Quais os meses mais quentes e mais frios? 
 
 
 ### Qual foi o São João  mais frio de CG que está nos nossos dados?
+
+Ao observar no gráfico as médias de temperatura no mês de Junho nos últimos anos (sabendo que o São João ocorre neste mês), é possível afirmar que o São João mais frio foi o do ano de 2004 (com uma média de 22.1 graus). Pode-se observar que nos anos de 2005 e 2008 foram dois anos em que o São João teve uma média de temperatura próxima ao ano de 2004.
+```{r warning=FALSE}
+climas %>%
+    filter(ano >= 2002, mes == 6, cidade == "Campina Grande") %>%
+    group_by(ano) %>%
+    mutate(tmedia_sj = (sum(tmedia) / n())) %>% 
+    ungroup() %>% 
+    mutate(min_value = min(tmedia_sj)) %>% 
+    group_by(ano) %>%
+    summarise(tmedia_sj = (sum(tmedia) / n()),
+              min_value = min(min_value)) %>% 
+    ggplot() +
+    geom_line(aes(x = ano, y = tmedia_sj, color = "salmon"), size = 1) +
+    geom_point(aes(x = ano, y = tmedia_sj, color = "salmon")) +
+    geom_line(aes(x = ano, y = min_value), color='steelblue', size=0.5) +
+    scale_x_continuous(breaks = seq(2002, 2018, 1)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) +
+    labs(
+        x = "Ano",
+        y = "Temperatura média no mês de Junho"
+    ) +
+    theme(legend.position = "none")
+```
 
 
 
 ## Chuva
 
-### Quanto chove por semana em JP e CG?
-
-Como é a distribuição do volume de chuvas por semana em JP e CG? A chuva varia mais ou menos que a temperatura? O formato da distribuição é igual? 
-
 ### No geral, onde chove mais?
 
-### A distribuição é diferente em meses específicos? 
+Nota-se uma diferença na quantidade de chuva que se fez presente entre as cidades nos últimos anos. Ao analisar o gráfico observa-se que os índices de chuva na cidade de João Pessoa foram maiores que os de Campina Grande em todos os últimos 17 anos. Desta forma, pode-se afirmar que, em geral, chove mais na capital paraibana.
+```{r}
+climas %>%
+    filter(ano >= 2002) %>%
+    group_by(cidade, ano) %>% 
+    summarise(media_chuva = sum(chuva) / n()) %>%
+    arrange(ano) %>% 
+    ggplot(aes(x = ano, y = media_chuva, color = cidade)) +
+    geom_line() +
+    geom_point(aes(shape = cidade)) +
+    scale_x_continuous(breaks = seq(2002, 2019, 1)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)) + 
+    theme(legend.position = "bottom") +
+    labs(
+        x = "Ano",
+        y = "Chuva (em mm)"
+    )
+```
+
+
+### A distribuição é diferente em meses específicos?
+
+O gráfico a seguir mostra a distribuição dos índices de chuva durante cada mês nos últimos 11 anos. Ao analisar estes dados, é possível afirmar que a presença de chuva, tanto na cidade de Campina Grande como na de João Pessoa se acentua entre os meses de Abril a Junho. Os meses de Outubro e Novembro se mostram os meses com menos chuva tanto em Campina Grande como na capital paraibana.
+```{r}
+### A distribuição é diferente em meses específicos?
+# cg %>%
+#     filter(ano <= 2018) %>% 
+#     ggplot(aes(x = mes, y = chuva, group = mes)) + 
+#     geom_boxplot(alpha = .4, fill = "salmon", coef = 1000) +
+#     scale_x_continuous(breaks = seq(1, 12, 1))
+# 
+# jp %>%
+#     filter(ano <= 2018) %>%
+#     ggplot(aes(x = mes, y = chuva, group = mes)) + 
+#     geom_boxplot(alpha = .4, fill = "steelblue", coef = 1000) +
+#     scale_x_continuous(breaks = seq(1, 12, 1))
+
+climas %>%
+    filter(ano >= 2008, ano <= 2018) %>% 
+    ggplot(aes(x = mes, y = chuva, group = mes)) + 
+    geom_boxplot(alpha = .4, fill = "steelblue", coef = 1000) +
+    scale_x_continuous(breaks = seq(1, 12, 1)) +
+    facet_wrap(~ cidade) +
+    labs(
+        x = 'Mês',
+        y = "Chuva (em mm)"
+    )
+```
 
